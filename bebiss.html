@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Para Amorcito</title>
+  <style>
+    :root{
+      --bg1:#ffe1ec;
+      --bg2:#fff3f7;
+
+      --pink-1:#ff4fa3;
+      --pink-2:#ff78bb;
+      --pink-3:#ff2f8f;
+
+      --paper:#ffffff;
+      --text:#2b2b2b;
+      --shadow:rgba(0,0,0,.16);
+      --stroke:rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: radial-gradient(1200px 700px at 50% 25%, var(--bg1) 0%, var(--bg2) 55%, #ffffff 100%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .scene{
+      width: 420px;
+      height: 420px;
+      position: relative;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding-bottom:24px;
+    }
+
+    /* CONFETI CANVAS */
+    #confetti{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index: 999;
+    }
+
+    /* CARTA */
+    .letter{
+      width: 320px;
+      height: 235px;
+      background: var(--paper);
+      border-radius: 14px;
+      box-shadow: 0 18px 45px var(--shadow);
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%) translateY(80px);
+      opacity: 0;
+      transition: transform 900ms cubic-bezier(.2,.8,.2,1), opacity 500ms ease;
+      padding: 18px 18px 14px 18px;
+      border: 1px solid var(--stroke);
+      z-index: 20;
+      overflow:hidden;
+    }
+    .letter::before{
+      content:"";
+      position:absolute;
+      inset:12px;
+      border-radius:12px;
+      border: 2px dashed rgba(255,79,163,.35);
+      pointer-events:none;
+    }
+    .letter .top{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin-top:8px;
+    }
+    .badge{
+      font-size:13px;
+      font-weight:700;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(255,79,163,.10);
+      border: 1px solid rgba(255,79,163,.25);
+    }
+
+    #questionText{
+      transition: opacity 220ms ease;
+    }
+
+    .letter h1{
+      margin: 14px 0 8px 0;
+      font-size: 18px;
+      text-align:center;
+      letter-spacing:.2px;
+      font-weight:800;
+    }
+    .letter p{
+      margin: 0;
+      font-size: 18px;
+      text-align:center;
+      line-height:1.35;
+    }
+    .letter .heart{
+      width: 18px;
+      height: 18px;
+      background: var(--pink-1);
+      position:absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      border-radius: 4px;
+      box-shadow: 0 6px 18px rgba(255,79,163,.35);
+    }
+    .letter .heart::before,
+    .letter .heart::after{
+      content:"";
+      width: 18px;
+      height: 18px;
+      background: var(--pink-1);
+      position:absolute;
+      border-radius: 50%;
+    }
+    .letter .heart::before{ left:-9px; top:0; }
+    .letter .heart::after{ top:-9px; left:0; }
+
+    .answerRow{
+      position:absolute;
+      left:0; right:0;
+      bottom:18px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      padding: 0 18px;
+      z-index: 5;
+      transition: opacity 200ms ease;
+    }
+    .btn{
+      border:0;
+      padding:10px 14px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:800;
+      box-shadow: 0 10px 20px rgba(0,0,0,.10);
+      transition: transform 120ms ease, filter 120ms ease;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn-yes{
+      background: linear-gradient(180deg, var(--pink-2), var(--pink-1));
+      color:#fff;
+    }
+    .btn-no{
+      background: #ffffff;
+      color: #444;
+      border: 1px solid rgba(0,0,0,.08);
+      position: relative;
+    }
+
+    /* MENSAJE FINAL */
+    .finalMsg{
+      position:absolute;
+      inset: 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      text-align:center;
+      opacity:0;
+      transform: scale(.98);
+      transition: opacity 250ms ease, transform 250ms ease;
+      padding: 12px;
+      z-index: 50;
+      pointer-events:none;
+      background: rgba(255,255,255,.72);
+      border-radius: 12px;
+      border: 1px solid rgba(255,79,163,.15);
+      backdrop-filter: blur(3px);
+    }
+    .finalMsg h2{
+      margin:0;
+      font-size: 22px;
+      color: var(--pink-3);
+    }
+    .finalMsg p{
+      margin:0;
+      font-size: 16px;
+      line-height:1.35;
+    }
+    .finalMsg.show{
+      opacity:1;
+      transform: scale(1);
+    }
+
+    /* SOBRE */
+    .envelope{
+      width: 360px;
+      height: 235px;
+      position: relative;
+      cursor: pointer;
+      user-select:none;
+      filter: drop-shadow(0 20px 30px rgba(0,0,0,.12));
+      z-index: 10;
+    }
+
+    .env-body{
+      width:100%;
+      height:100%;
+      background: linear-gradient(180deg, var(--pink-2), var(--pink-1));
+      border-radius: 20px;
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.25);
+    }
+
+    .env-bottom{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      width:0; height:0;
+      margin:auto;
+      border-left:180px solid transparent;
+      border-right:180px solid transparent;
+      border-top:130px solid rgba(0,0,0,.10);
+      transform: translateY(44px);
+      opacity:.95;
+    }
+
+    .env-left{
+      position:absolute;
+      left:0; top:0;
+      width:0; height:0;
+      border-top:118px solid transparent;
+      border-bottom:118px solid transparent;
+      border-right:180px solid rgba(255,255,255,.18);
+    }
+    .env-right{
+      position:absolute;
+      right:0; top:0;
+      width:0; height:0;
+      border-top:118px solid transparent;
+      border-bottom:118px solid transparent;
+      border-left:180px solid rgba(0,0,0,.08);
+    }
+
+    .env-flap{
+      position:absolute;
+      left:0; right:0; top:0;
+      width:0; height:0;
+      margin:auto;
+      border-left:180px solid transparent;
+      border-right:180px solid transparent;
+      border-bottom:140px solid #ff9ccc;
+      transform-origin: top center;
+      transform: translateY(6px) rotateX(0deg);
+      transition: transform 900ms cubic-bezier(.2,.8,.2,1);
+      z-index: 5;
+      filter: brightness(1.02);
+    }
+
+    .hint{
+      position:absolute;
+      top:-48px;
+      width:100%;
+      text-align:center;
+      font-size:14px;
+      opacity:.80;
+      color: rgba(43,43,43,.85);
+    }
+
+    .controls{
+      position:absolute;
+      bottom:-58px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      width:100%;
+      z-index: 30;
+    }
+    .ctl{
+      border:0;
+      padding:10px 14px;
+      border-radius: 999px;
+      background:#ffffff;
+      box-shadow: 0 10px 20px rgba(0,0,0,.10);
+      cursor:pointer;
+      font-weight:800;
+    }
+    .ctl:active{ transform: translateY(1px); }
+
+    /* Estado abierto */
+    .open .env-flap{ transform: translateY(6px) rotateX(180deg); }
+    .open .letter{
+      transform: translateX(-50%) translateY(-88px);
+      opacity: 1;
+    }
+
+    /* MÚSICA */
+    .audioWrap{
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(0,0,0,.06);
+      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.10);
+      z-index: 1000;
+      max-width: calc(100vw - 28px);
+    }
+    .audioWrap .label{
+      font-size: 12px;
+      font-weight: 800;
+      opacity: .85;
+      margin-bottom: 6px;
+    }
+    audio{ width: 280px; max-width: 100%; }
+  </style>
+</head>
+
+<body>
+  <canvas id="confetti"></canvas>
+
+  <div class="audioWrap" aria-label="Música">
+    <div class="label">🎵 “Lovers” — Anna of the North (archivo local)</div>
+    <audio id="music" controls preload="auto">
+      <source src="lovers.mp3" type="audio/mpeg">
+      Tu navegador no soporta audio HTML5.
+    </audio>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="letter" id="letter" aria-hidden="true">
+      <div class="heart" aria-hidden="true"></div>
+
+      <div class="top">
+        <span class="badge">Para: Amorcito</span>
+      </div>
+
+      <div id="questionText">
+        <h1>💌 San Valentín</h1>
+        <p>¿Quieres ser mi<br><strong>San Valentín</strong>?</p>
+      </div>
+
+      <div class="finalMsg" id="finalMsg" aria-hidden="true">
+        <h2>Te amo 💘</h2>
+        <p>Te veo el 14 en tu restaurante preferido.</p>
+      </div>
+
+      <div class="answerRow" id="answerRow">
+        <button class="btn btn-yes" id="yesBtn" type="button">Sí</button>
+        <button class="btn btn-no" id="noBtn" type="button">No</button>
+      </div>
+    </div>
+
+    <div class="envelope" id="envelope" role="button" aria-label="Abrir sobre" tabindex="0">
+      <div class="hint">Toca el sobre para abrirlo</div>
+      <div class="env-body">
+        <div class="env-left"></div>
+        <div class="env-right"></div>
+        <div class="env-bottom"></div>
+      </div>
+      <div class="env-flap"></div>
+
+      <div class="controls">
+        <button class="ctl" id="toggleBtn" type="button">Abrir / Cerrar</button>
+        <button class="ctl" id="replayBtn" type="button">Repetir</button>
+        <button class="ctl" id="musicBtn" type="button">Play / Pause</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const envelope = document.getElementById('envelope');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const replayBtn = document.getElementById('replayBtn');
+    const musicBtn = document.getElementById('musicBtn');
+    const music = document.getElementById('music');
+
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const answerRow = document.getElementById('answerRow');
+    const finalMsg = document.getElementById('finalMsg');
+    const questionText = document.getElementById('questionText');
+
+    function tryPlay(){
+      if (music.paused) {
+        music.play().catch(()=>{});
+      }
+    }
+
+    function toggleOpen(){
+      scene.classList.toggle('open');
+      if (scene.classList.contains('open')) tryPlay();
+    }
+
+    function resetLetterUI(){
+      finalMsg.classList.remove('show');
+      questionText.style.opacity = '1';
+
+      answerRow.style.opacity = '1';
+      answerRow.style.pointerEvents = 'auto';
+
+      yesBtn.disabled = false;
+      noBtn.disabled = false;
+
+      // reset "No" button behavior text/pos
+      noBtn.textContent = "No";
+      noBtn.style.transform = "translate(0px, 0px)";
+      noMoves = 0;
+    }
+
+    function replay(){
+      resetLetterUI();
+      scene.classList.remove('open');
+      void scene.offsetWidth;
+      scene.classList.add('open');
+      tryPlay();
+    }
+
+    envelope.addEventListener('click', toggleOpen);
+    toggleBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleOpen(); });
+    replayBtn.addEventListener('click', (e)=>{ e.stopPropagation(); replay(); });
+    musicBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if (music.paused) music.play().catch(()=>{});
+      else music.pause();
+    });
+
+    envelope.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        toggleOpen();
+      }
+    });
+
+    // Botón "No" escurridizo (sin ser imposible)
+    let noMoves = 0;
+    noBtn.addEventListener('mouseenter', () => {
+      noMoves++;
+      const maxX = 90;
+      const maxY = 22;
+      const x = (Math.random()*2 - 1) * Math.min(maxX, 20 + noMoves*10);
+      const y = (Math.random()*2 - 1) * maxY;
+      noBtn.style.transform = `translate(${x}px, ${y}px)`;
+      if (noMoves >= 5) noBtn.textContent = "Ok, sí 😅";
+    });
+
+    // Al pulsar "Sí": confeti + mensaje final (y ocultar texto anterior)
+    yesBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      launchConfetti(160);
+
+      // Oculta la pregunta para que no se vea detrás
+      questionText.style.opacity = '0';
+
+      // Muestra mensaje final
+      finalMsg.classList.add('show');
+
+      // Oculta botones
+      answerRow.style.opacity = '0';
+      answerRow.style.pointerEvents = 'none';
+
+      yesBtn.disabled = true;
+      noBtn.disabled = true;
+
+      // Si quieres que la música sí o sí arranque al decir "Sí"
+      tryPlay();
+    });
+
+    noBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      noBtn.textContent = "Eso no 😌";
+      setTimeout(()=> { yesBtn.focus(); }, 250);
+    });
+
+    // Auto-abrir al cargar
+    setTimeout(()=> scene.classList.add('open'), 600);
+
+    /* ===== CONFETI (canvas) ===== */
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    function resize(){
+      W = canvas.width = window.innerWidth * devicePixelRatio;
+      H = canvas.height = window.innerHeight * devicePixelRatio;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const confetti = [];
+    function rand(min, max){ return Math.random()*(max-min)+min; }
+
+    function launchConfetti(count=140){
+      const originX = window.innerWidth/2;
+      const originY = window.innerHeight/2 - 80;
+      for(let i=0;i<count;i++){
+        confetti.push({
+          x: originX + rand(-20,20),
+          y: originY + rand(-10,10),
+          vx: rand(-5,5),
+          vy: rand(-10,-5),
+          g: rand(0.18, 0.32),
+          r: rand(2,4),
+          a: 1,
+          spin: rand(-0.2,0.2),
+          ang: rand(0, Math.PI*2),
+          life: rand(70, 110),
+          c: (()=>{
+            const palette = ["#ff4fa3","#ff78bb","#ffb3d6","#ffffff","#ffd1e7","#ffe7f2"];
+            return palette[(Math.random()*palette.length)|0];
+          })()
+        });
+      }
+      if (!animating) animate();
+    }
+
+    let animating = false;
+    function animate(){
+      animating = true;
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+      for(let i=confetti.length-1; i>=0; i--){
+        const p = confetti[i];
+        p.life -= 1;
+        p.vy += p.g;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.ang += p.spin;
+        if (p.life < 25) p.a = Math.max(0, p.life/25);
+
+        ctx.globalAlpha = p.a;
+        ctx.fillStyle = p.c;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.ang);
+        ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+        ctx.restore();
+
+        if (p.life <= 0 || p.y > window.innerHeight + 30) {
+          confetti.splice(i,1);
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      if (confetti.length > 0) requestAnimationFrame(animate);
+      else animating = false;
+    }
+  </script>
+</body>
+</html>
